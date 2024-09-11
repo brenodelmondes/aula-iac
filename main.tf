@@ -13,23 +13,44 @@ provider "aws" {
   region = "us-east-1"
 }
 
-resource "aws_instance" "ec2-iac-aula2" {
+resource "aws_instance" "ec2-iac-pub-aula2" {
   ami           = "ami-0e86e20dae9224db8"
   instance_type = "t2.micro"
 
   tags = {
-    Name = "ec2-iac-aula2"
+    Name = "ec2-iac-aula2-pub"
   }
 
-  ebs_block_device { // Bloco de armazenamento (disco)
+  ebs_block_device {
     device_name = "/dev/sda1"
     volume_type = "gp3"
     volume_size = 30
   }
 
-  security_groups = [aws_security_group.sg_aula_iac.name, "default"] // Adicionando o security group criado e "default" já existente
+  vpc_security_group_ids = [aws_security_group.sg_aula_iac_tarefa.id]
 
   key_name = "aula-iac"
+
+  subnet_id = aws_subnet.sub_pub_sptech.id
+}
+
+resource "aws_instance" "ec2-iac-pri-aula2" {
+  ami           = "ami-0e86e20dae9224db8"
+  instance_type = "t2.micro"
+
+  tags = {
+    Name = "ec2-iac-aula2_pri"
+  }
+
+  ebs_block_device {
+    device_name = "/dev/sda1"
+    volume_type = "gp3"
+    volume_size = 30
+  }
+
+  key_name = "aula-iac"
+
+  subnet_id = aws_subnet.sub_pri_sptech.id
 }
 
 variable "porta_http" {
@@ -44,8 +65,9 @@ variable "porta_https" {
   type = number
 }
 
-resource "aws_security_group" "sg_aula_iac" {
-  name = "sg_aula_iac"
+resource "aws_security_group" "sg_aula_iac_tarefa" {
+  name = "sg_aula_iac_tarefa"
+  vpc_id = aws_vpc.vpc_sptech.id
 
   ingress {
     from_port   = 22
@@ -55,7 +77,25 @@ resource "aws_security_group" "sg_aula_iac" {
   }
 }
 
-resource "aws_subnet" "minha_subnet" {
-  vpc_id = "id da vpc"
-  cidr_block = "10.10.10.0/24"
+resource "aws_vpc" "vpc_sptech" {
+  tags = {
+    Name = "vpc_sptech"
+  }
+  cidr_block = "10.0.0.0/24"
+}
+
+resource "aws_subnet" "sub_pri_sptech" {
+  tags = {
+    Name = "sub_pri_sptech"
+  }
+  vpc_id = aws_vpc.vpc_sptech.id
+  cidr_block = "10.0.0.0/25"
+}
+
+resource "aws_subnet" "sub_pub_sptech" {
+  tags = {
+    Name = "sub_pub_sptech"
+  }
+  vpc_id = aws_vpc.vpc_sptech.id
+  cidr_block = "10.0.0.128/25"
 }
